@@ -45,12 +45,21 @@ export default function Home() {
                 </ol>
             </section>
 
-            <section style={{ marginTop: "2rem", backgroundColor: "#f5f5f5", padding: "1rem", borderRadius: "8px" }}>
-                <h2 style={{ marginTop: 0 }}>Current Branch</h2>
+            <section style={{ marginTop: "2rem", backgroundColor: "#eeffee", padding: "1rem", borderRadius: "8px", border: "2px solid #44aa44" }}>
+                <h2 style={{ marginTop: 0, color: "#44aa44" }}>🟢 Current Branch: FIXED</h2>
                 <p>
-                    This is the <strong>main</strong> branch with documentation only.
-                    Switch to <code>vulnerable</code> or <code>fixed</code> branch to see the implementations.
+                    This deployment uses the <strong>fixed</strong> branch with corrected middleware patterns.
+                    No cookie mixing should occur, even under heavy concurrent load.
                 </p>
+                <p style={{ marginBottom: 0 }}>
+                    <strong>Fixed patterns:</strong>
+                </p>
+                <ul style={{ marginTop: "0.5rem" }}>
+                    <li>Single <code>cookies()</code> call in middleware</li>
+                    <li>Cookie store passed as parameter to all helpers</li>
+                    <li>Proper error handling with guaranteed response</li>
+                    <li>Complete request isolation regardless of Fluid Compute</li>
+                </ul>
             </section>
 
             <section style={{ marginTop: "2rem" }}>
