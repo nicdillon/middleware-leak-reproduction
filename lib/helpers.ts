@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 
 /**
  * VULNERABLE PATTERN: This function calls cookies() internally
- * This creates a separate cookie store instance from the one in middleware
+ * With Edge Runtime + AsyncLocalStorage issues, this can get the wrong context
  */
 export const getUUID = async (): Promise<string> => {
     const cookieStore = await cookies();
@@ -20,32 +20,73 @@ export const getUUID = async (): Promise<string> => {
 };
 
 /**
- * VULNERABLE PATTERN: This function calls cookies() internally and makes an async API call
- * This simulates the Dynamic Yield pattern where we:
- * 1. Read existing cookies
- * 2. Make an external API call (with network delay)
- * 3. Return new cookies to set
+ * CRITICAL VULNERABLE PATTERN: Edge Runtime AsyncLocalStorage Corruption
  *
- * The delay increases the window for race conditions when requests are processed concurrently
+ * This function replicates the exact Dynamic Yield pattern that causes issues:
+ * 1. Call cookies() to read existing cookies (uses AsyncLocalStorage)
+ * 2. Make external fetch() to API (async boundary where context can corrupt)
+ * 3. Call cookies() again after fetch completes (may get wrong context)
+ *
+ * The external fetch is the critical trigger - during the network delay,
+ * another request can arrive and its AsyncLocalStorage context can leak
+ * into this request's context when the fetch completes.
  */
-export const getMockABTestCookies = async (userId: string): Promise<Array<{ name: string; value: string; maxAge: number }>> => {
-    const cookieStore = await cookies();
+export const getMockABTestCookies = async (
+    userId: string,
+    requestId: string
+): Promise<Array<{ name: string; value: string; maxAge: number }>> => {
+    console.log(`[${requestId}] getMockABTestCookies START for userId: ${userId}`);
 
-    // Read existing cookies (simulating DY pattern)
+    // STEP 1: Call cookies() before external fetch
+    const cookieStore = await cookies();
     const existingAbTest = cookieStore.get("ab_test_id");
     const existingUuid = cookieStore.get("user_uuid");
 
-    // Simulate external API call with delay (like Dynamic Yield)
-    await new Promise(resolve => setTimeout(resolve, 50 + Math.random() * 50)); // 50-100ms delay
+    console.log(`[${requestId}] Read existing cookies - uuid: ${existingUuid?.value}, abTest: ${existingAbTest?.value}`);
+
+    // STEP 2: Make REAL external fetch call
+    // This simulates calling Dynamic Yield API: https://dy-api.com/v2/serve/user/choose
+    // Using httpbin.org/delay which adds realistic network latency
+    console.log(`[${requestId}] Making external fetch call...`);
+
+    try {
+        // Fetch with 100-200ms delay to simulate DY API response time
+        const delayMs = 100 + Math.floor(Math.random() * 100);
+        const response = await fetch(`https://httpbin.org/delay/${delayMs / 1000}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                userId: userId,
+                requestId: requestId,
+                timestamp: Date.now(),
+            }),
+        });
+
+        console.log(`[${requestId}] External fetch completed with status: ${response.status}`);
+    } catch (e) {
+        console.error(`[${requestId}] External fetch failed:`, e);
+    }
+
+    // STEP 3: Call cookies() AGAIN after external fetch completes
+    // THIS IS WHERE CONTEXT CORRUPTION HAPPENS IN EDGE RUNTIME
+    // If another request arrived during the fetch, we might get their context
+    const cookieStore2 = await cookies();
+    const postFetchUuid = cookieStore2.get("user_uuid");
+
+    console.log(`[${requestId}] After external fetch - reading cookies again. UUID: ${postFetchUuid?.value}`);
 
     // Generate AB test cookies based on user ID
     const abTestId = `ab_${userId}_${Date.now() % 1000}`;
+
+    console.log(`[${requestId}] getMockABTestCookies END - returning abTestId: ${abTestId}`);
 
     return [
         {
             name: "ab_test_id",
             value: abTestId,
-            maxAge: 60 * 60 * 24, // 24 hours
+            maxAge: 60 * 60 * 24,
         },
         {
             name: "ab_variant",
