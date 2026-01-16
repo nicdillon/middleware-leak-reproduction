@@ -53,6 +53,11 @@ export async function middleware(request: NextRequest) {
             response.cookies.set(cookie.name, cookie.value, { maxAge: cookie.maxAge });
         });
 
+        // Set custom headers so API endpoint can verify what middleware intended to set
+        // This allows us to test for cookie leaking
+        response.headers.set("x-middleware-user-id", userId);
+        response.headers.set("x-middleware-ab-test-id", abTestCookies[0]?.value || "");
+
         return response;
     } catch (e: any) {
         // SOLUTION: Always return a response, even on error
