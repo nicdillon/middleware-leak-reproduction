@@ -45,12 +45,20 @@ export default function Home() {
                 </ol>
             </section>
 
-            <section style={{ marginTop: "2rem", backgroundColor: "#f5f5f5", padding: "1rem", borderRadius: "8px" }}>
-                <h2 style={{ marginTop: 0 }}>Current Branch</h2>
+            <section style={{ marginTop: "2rem", backgroundColor: "#ffeeee", padding: "1rem", borderRadius: "8px", border: "2px solid #ff4444" }}>
+                <h2 style={{ marginTop: 0, color: "#ff4444" }}>🔴 Current Branch: VULNERABLE</h2>
                 <p>
-                    This is the <strong>main</strong> branch with documentation only.
-                    Switch to <code>vulnerable</code> or <code>fixed</code> branch to see the implementations.
+                    This deployment uses the <strong>vulnerable</strong> branch with problematic middleware patterns.
+                    Cookie mixing is expected to occur under concurrent load.
                 </p>
+                <p style={{ marginBottom: 0 }}>
+                    <strong>Problematic patterns:</strong>
+                </p>
+                <ul style={{ marginTop: "0.5rem" }}>
+                    <li>Multiple <code>cookies()</code> calls (3 total)</li>
+                    <li>Helper functions call <code>cookies()</code> internally</li>
+                    <li>Async operations with network delays create race conditions</li>
+                </ul>
             </section>
 
             <section style={{ marginTop: "2rem" }}>
