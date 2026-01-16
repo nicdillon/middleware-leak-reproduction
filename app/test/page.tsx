@@ -4,8 +4,8 @@ import { useState } from "react";
 
 interface TestResult {
     requestUserId: string;
-    receivedUuid: string;
-    receivedAbTestId: string;
+    middlewareSetUserId: string;
+    middlewareSetAbTestId: string;
     timestamp: string;
     match: boolean;
 }
@@ -31,8 +31,8 @@ export default function TestPage() {
                     .then(res => res.json())
                     .catch(err => ({
                         requestUserId: userId,
-                        receivedUuid: "ERROR",
-                        receivedAbTestId: "ERROR",
+                        middlewareSetUserId: "ERROR",
+                        middlewareSetAbTestId: "ERROR",
                         timestamp: new Date().toISOString(),
                         error: err.message,
                     }));
@@ -42,11 +42,11 @@ export default function TestPage() {
 
             // Analyze results
             responses.forEach((data: any) => {
-                const match = data.receivedUuid === data.requestUserId;
+                const match = data.middlewareSetUserId === data.requestUserId;
                 testResults.push({
                     requestUserId: data.requestUserId,
-                    receivedUuid: data.receivedUuid,
-                    receivedAbTestId: data.receivedAbTestId,
+                    middlewareSetUserId: data.middlewareSetUserId,
+                    middlewareSetAbTestId: data.middlewareSetAbTestId,
                     timestamp: data.timestamp,
                     match,
                 });
@@ -127,8 +127,8 @@ export default function TestPage() {
                             <thead style={{ position: "sticky", top: 0, backgroundColor: "#f5f5f5" }}>
                                 <tr>
                                     <th style={{ padding: "0.75rem", textAlign: "left", borderBottom: "2px solid #ddd" }}>Request User ID</th>
-                                    <th style={{ padding: "0.75rem", textAlign: "left", borderBottom: "2px solid #ddd" }}>Received UUID</th>
-                                    <th style={{ padding: "0.75rem", textAlign: "left", borderBottom: "2px solid #ddd" }}>AB Test ID</th>
+                                    <th style={{ padding: "0.75rem", textAlign: "left", borderBottom: "2px solid #ddd" }}>Middleware Set User ID</th>
+                                    <th style={{ padding: "0.75rem", textAlign: "left", borderBottom: "2px solid #ddd" }}>Middleware Set AB Test</th>
                                     <th style={{ padding: "0.75rem", textAlign: "left", borderBottom: "2px solid #ddd" }}>Status</th>
                                 </tr>
                             </thead>
@@ -141,8 +141,8 @@ export default function TestPage() {
                                         }}
                                     >
                                         <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>{result.requestUserId}</td>
-                                        <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>{result.receivedUuid}</td>
-                                        <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>{result.receivedAbTestId}</td>
+                                        <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>{result.middlewareSetUserId}</td>
+                                        <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>{result.middlewareSetAbTestId}</td>
                                         <td style={{ padding: "0.5rem", borderBottom: "1px solid #eee" }}>
                                             {result.match ? (
                                                 <span style={{ color: "#44aa44" }}>✓ Match</span>
