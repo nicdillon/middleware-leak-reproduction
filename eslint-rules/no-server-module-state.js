@@ -12,8 +12,8 @@
  *
  * Only applies to server-side files:
  * - middleware.ts
- * - app/api/**/route.ts
- * - lib/**\/*.ts (but not lib/**\/*.tsx)
+ * - app/api/ (star)(star)/route.ts
+ * - lib/ (star)(star)/ (star).ts (but not lib/ (star)(star)/ (star).tsx)
  */
 
 module.exports = {
