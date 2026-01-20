@@ -7,20 +7,24 @@
  * for AsyncLocalStorage context corruption in Edge Runtime with Fluid Compute.
  *
  * Usage:
- *   node load-test.js <deployment-url> [num-requests]
+ *   node load-test.js <deployment-url> [num-requests] [bypass-token]
  *
- * Example:
+ * Examples:
  *   node load-test.js https://middleware-leak-reproduction-git-vulnerable.vercel.app 100
+ *   node load-test.js https://preview.vercel.app 50 vercel_live_secret_xxxxx
  */
 
 const DEPLOYMENT_URL = process.argv[2];
 const NUM_REQUESTS = parseInt(process.argv[3]) || 50;
+const BYPASS_TOKEN = process.argv[4] || process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
 if (!DEPLOYMENT_URL) {
     console.error("❌ Error: Deployment URL required");
-    console.error("\nUsage: node load-test.js <deployment-url> [num-requests]");
-    console.error("\nExample:");
+    console.error("\nUsage: node load-test.js <deployment-url> [num-requests] [bypass-token]");
+    console.error("\nExamples:");
     console.error("  node load-test.js https://your-deployment.vercel.app 100");
+    console.error("  node load-test.js https://preview.vercel.app 50 vercel_live_secret_xxxxx");
+    console.error("\nOr set VERCEL_AUTOMATION_BYPASS_SECRET environment variable");
     process.exit(1);
 }
 
@@ -28,6 +32,7 @@ console.log("\n🧪 Edge Runtime AsyncLocalStorage Corruption Test");
 console.log("================================================\n");
 console.log(`Target: ${DEPLOYMENT_URL}`);
 console.log(`Requests: ${NUM_REQUESTS} concurrent requests`);
+console.log(`Bypass Token: ${BYPASS_TOKEN ? "✓ Provided" : "✗ Not provided"}`);
 console.log(`Strategy: Fire all requests simultaneously to trigger instance reuse\n`);
 
 async function runLoadTest() {
@@ -43,10 +48,17 @@ async function runLoadTest() {
             const requestStart = Date.now();
 
             try {
+                const headers = {
+                    "User-Agent": "LoadTest/1.0",
+                };
+
+                // Add Vercel protection bypass if token provided
+                if (BYPASS_TOKEN) {
+                    headers["x-vercel-protection-bypass"] = BYPASS_TOKEN;
+                }
+
                 const response = await fetch(`${DEPLOYMENT_URL}/api/test-cookies?userId=${userId}`, {
-                    headers: {
-                        "User-Agent": "LoadTest/1.0",
-                    },
+                    headers,
                 });
 
                 if (!response.ok) {
